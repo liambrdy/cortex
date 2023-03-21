@@ -2,7 +2,7 @@ set -xe
 
 [[ -d build ]] || mkdir build
 
-CommonCompilerFlags="-Wall -Wextra"
+CommonCompilerFlags="-Wall -Wextra -ggdb"
 LibCFlags="`pkg-config --cflags sdl2 glew`"
 LinkerFlags="-ldl `pkg-config --libs sdl2 glew`"
 
