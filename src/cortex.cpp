@@ -1,16 +1,12 @@
 #include <stdio.h>
 
+#include <GL/gl.h>
+
+#include "cortex.h"
 #include "cortex_platform.h"
 #include "cortex_math.h"
 
-#include <GL/glew.h>
-
-struct memory_arena
-{
-    size_t size;
-    uint8 *base;
-    size_t used;
-};
+#include "cortex_opengl.cpp"
 
 void InitializeArena(memory_arena *arena, size_t size, uint8 *storage)
 {
@@ -30,34 +26,19 @@ void *PushSize_(memory_arena *arena, size_t size)
 #define PushStruct(arena, type) (type *)PushSize_(arena, sizeof(type))
 #define PushArray(arena, count, type) (type *)PushSize_(arena, (count) * sizeof(type))
 
-enum render_command_type
+opengl_buffer CreateOpenGLBuffer(game_state *gameState, GLenum type, uint32 capacity)
 {
-    RenderCommandType_Clear,
-    RenderCommandType_Viewport,
-    RenderCommandType_Line,
-    RenderCommandType_Rect,
-    RenderCommandType_FilledRect,
-    RenderCommandType_Texture
-};
+    opengl_buffer result = {};
+    
+    glCreateBuffers(1, &result.handle);
+    glBindBuffer(type, result.handle);
+    glBufferData(type, capacity, NULL, GL_DYNAMIC_DRAW);
 
-struct render_command
-{
-    render_command_type type;
-    v4 color;
-    rectangle2 rect;
-};
+    result.bufferCapacity = capacity;
+    result.buffer = (real32 *) PushSize_(&gameState->permanentArena, capacity);
 
-struct game_state
-{
-    memory_arena permanentArena;
-
-    render_command *renderStack;
-    uint32 renderStackCount;
-
-    uint32 rectVao;
-    uint32 rectVbo;
-    uint32 rectShader;
-};
+    return result;
+}
 
 inline void PushRenderCommand(game_state *gameState, render_command cmd)
 {
@@ -93,8 +74,14 @@ extern "C" GAME_UPDATE(GameUpdate)
         gameState->renderStack = PushArray(&gameState->permanentArena, 1024, render_command);
         gameState->renderStackCount = 0;
 
+        LoadAllOpenGLFunctions(memory->getOpenGLFunction);
+
         glCreateVertexArrays(1, &gameState->rectVao);
         glBindVertexArray(gameState->rectVao);
+
+        gameState->rectBuffer = CreateOpenGLBuffer(gameState, GL_ARRAY_BUFFER, 100);
+
+        CreateOpenGLShaders(gameState->shaders);
 
         memory->isInitialized = true;
     }
@@ -118,6 +105,11 @@ extern "C" GAME_UPDATE(GameUpdate)
             case RenderCommandType_Viewport:
             {
                 glViewport(cmd->rect.min.x, cmd->rect.min.y, cmd->rect.max.x, cmd->rect.max.y);
+            } break;
+
+            case RenderCommandType_Rect:
+            {
+                
             } break;
 
             default: {}

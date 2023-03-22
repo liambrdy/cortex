@@ -34,9 +34,14 @@ typedef double real64;
 
 #define InvalidCodePath Assert(!"InvalidCodePath");
 
+#define ArrayCount(arr) (sizeof(arr) / sizeof((arr)[0]))
+
 #define Kilobytes(value) ((value) * 1024LL)
 #define Megabytes(value) (Kilobytes(value) * 1024LL)
 #define Gigabytes(value) (Megabytes(value) * 1024LL)
+
+#define PLATFORM_GET_OPENGL_FUNCTION(name) void *name(const char *proc)
+typedef PLATFORM_GET_OPENGL_FUNCTION(platform_get_opengl_function);
 
 struct game_memory
 {
@@ -44,6 +49,8 @@ struct game_memory
 
     uint64 permanentStorageSize;
     void *permanentStorage;
+
+    platform_get_opengl_function *getOpenGLFunction;
 };
 
 #define GAME_UPDATE(name) void name(game_memory *memory)

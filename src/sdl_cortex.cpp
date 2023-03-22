@@ -10,6 +10,11 @@
 
 global bool globalRunning;
 
+PLATFORM_GET_OPENGL_FUNCTION(PlatformGetOpenGLFunction)
+{
+    return SDL_GL_GetProcAddress(proc);
+}
+
 struct game_code
 {
     void *libHandle;
@@ -74,6 +79,8 @@ int main()
         game_memory memory;
         memory.permanentStorageSize = Megabytes(64);
         memory.permanentStorage = malloc(memory.permanentStorageSize);
+
+        memory.getOpenGLFunction = PlatformGetOpenGLFunction;
 
         Assert(memory.permanentStorage);
 
