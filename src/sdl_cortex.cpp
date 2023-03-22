@@ -72,6 +72,8 @@ int main()
     const char *gameCodeLibraryPath = "build/libcortex.so";
     game_code gameCode = LoadGameCode(gameCodeLibraryPath);
 
+    SDL_Init(SDL_INIT_VIDEO);
+
     SDL_Window *window = SDL_CreateWindow("Cortex", 0, 0, 1280, 720, SDL_WINDOW_OPENGL);
     SDL_GL_CreateContext(window);
     if (window)
@@ -100,9 +102,6 @@ int main()
             {
                 gameCode.gameUpdate(&memory);
             }
-
-            // glClearColor(0.0f, 0.15f, 0.3f, 1.0f);
-            // glClear(GL_COLOR_BUFFER_BIT);
 
             SDL_GL_SwapWindow(window);
         }

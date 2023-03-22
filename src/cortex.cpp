@@ -40,6 +40,12 @@ opengl_buffer CreateOpenGLBuffer(game_state *gameState, GLenum type, uint32 capa
     return result;
 }
 
+void PushV2ToBuffer(opengl_buffer *buf, v2 data)
+{
+    buf->buffer[buf->bufferSize++] = data.x;
+    buf->buffer[buf->bufferSize++] = data.y;
+}
+
 inline void PushRenderCommand(game_state *gameState, render_command cmd)
 {
     gameState->renderStack[gameState->renderStackCount++] = cmd;
@@ -58,8 +64,19 @@ inline void PushViewport(game_state *gameState, v2 min, v2 dim)
 {
     render_command cmd = {};
     cmd.type = RenderCommandType_Viewport;
-    cmd.rect.min = min;
-    cmd.rect.max = dim;
+    cmd.rect.x = min.x;
+    cmd.rect.y = min.y;
+    cmd.rect.z = dim.x;
+    cmd.rect.w = dim.y;
+
+    PushRenderCommand(gameState, cmd);
+}
+
+inline void PushRect(game_state *gameState, v4 rect)
+{
+    render_command cmd = {};
+    cmd.type = RenderCommandType_Rect;
+    cmd.rect = rect;
 
     PushRenderCommand(gameState, cmd);
 }
@@ -78,6 +95,8 @@ extern "C" GAME_UPDATE(GameUpdate)
 
         glCreateVertexArrays(1, &gameState->rectVao);
         glBindVertexArray(gameState->rectVao);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(real32), 0);
 
         gameState->rectBuffer = CreateOpenGLBuffer(gameState, GL_ARRAY_BUFFER, 100);
 
@@ -90,6 +109,8 @@ extern "C" GAME_UPDATE(GameUpdate)
     
     PushClear(gameState, V4(0.0f, 0.1f, 0.3f, 1.0f));
     PushViewport(gameState, V2(0.0f, 0.0f), V2(1280.0f, 720.0f));
+
+    PushRect(gameState, V4(0.0f, 0.0f, 0.5f, 0.5f));
 
     for (uint32 i = 0; i < gameState->renderStackCount; i++)
     {
@@ -104,15 +125,30 @@ extern "C" GAME_UPDATE(GameUpdate)
 
             case RenderCommandType_Viewport:
             {
-                glViewport(cmd->rect.min.x, cmd->rect.min.y, cmd->rect.max.x, cmd->rect.max.y);
+                glViewport(cmd->rect.x, cmd->rect.y, cmd->rect.z, cmd->rect.w);
             } break;
 
             case RenderCommandType_Rect:
             {
-                
+                v2 min = {cmd->rect.x, cmd->rect.y};
+                v2 dim = {cmd->rect.z, cmd->rect.w};
+                PushV2ToBuffer(&gameState->rectBuffer, min);
+                PushV2ToBuffer(&gameState->rectBuffer, V2(min.x + dim.x, min.y));
+                PushV2ToBuffer(&gameState->rectBuffer, V2(min.x, min.y + dim.y));
+                PushV2ToBuffer(&gameState->rectBuffer, min + dim);
             } break;
 
             default: {}
         }
+    }
+
+    if (gameState->rectBuffer.bufferSize > 0)
+    {
+        glBindVertexArray(gameState->rectVao);
+        glBindBuffer(GL_ARRAY_BUFFER, gameState->rectBuffer.handle);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, gameState->rectBuffer.bufferSize * sizeof(real32), gameState->rectBuffer.buffer);
+        glUseProgram(gameState->shaders[ShaderType_Rect]);
+        glDrawArrays(GL_TRIANGLES, 0, gameState->rectBuffer.bufferSize);
+        gameState->rectBuffer.bufferSize = 0;
     }
 }

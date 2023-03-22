@@ -25,7 +25,7 @@ struct render_command
 {
     render_command_type type;
     v4 color;
-    rectangle2 rect;
+    v4 rect;
 };
 
 struct opengl_buffer

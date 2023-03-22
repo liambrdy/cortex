@@ -18,6 +18,10 @@ typedef void gl_get_program_iv(GLuint program, GLenum pname, GLint *params);
 typedef void gl_get_program_info_log(GLuint program, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
 typedef void gl_attach_shader(GLuint program, GLuint shader);
 typedef void gl_link_program(GLuint program);
+typedef void gl_buffer_sub_data(GLenum target, GLintptr offset, GLsizeiptr size, const void * data);
+typedef void gl_use_program(GLuint program);
+typedef void gl_enable_vertex_attrib_array(GLuint index);
+typedef void gl_vertex_attrib_pointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void * pointer);
 
 global gl_create_vertex_arrays *glCreateVertexArrays;
 global gl_bind_vertex_array *glBindVertexArray;
@@ -34,6 +38,10 @@ global gl_get_shader_info_log *glGetShaderInfoLog;
 global gl_get_program_info_log *glGetProgramInfoLog;
 global gl_attach_shader *glAttachShader;
 global gl_link_program *glLinkProgram;
+global gl_buffer_sub_data *glBufferSubData;
+global gl_use_program *glUseProgram;
+global gl_enable_vertex_attrib_array *glEnableVertexAttribArray;
+global gl_vertex_attrib_pointer *glVertexAttribPointer;
 
 void LoadAllOpenGLFunctions(platform_get_opengl_function *getOpenGLFunction)
 {
@@ -54,13 +62,21 @@ void LoadAllOpenGLFunctions(platform_get_opengl_function *getOpenGLFunction)
         glGetProgramInfoLog = (gl_get_program_info_log *)getOpenGLFunction("glGetProgramInfoLog");
         glAttachShader = (gl_attach_shader *)getOpenGLFunction("glAttachShader");
         glLinkProgram = (gl_link_program *)getOpenGLFunction("glLinkProgram");
+        glBufferSubData = (gl_buffer_sub_data *)getOpenGLFunction("glBufferSubData");
+        glUseProgram = (gl_use_program *)getOpenGLFunction("glUseProgram");
+        glEnableVertexAttribArray = (gl_enable_vertex_attrib_array *)getOpenGLFunction("glEnableVertexAttribArray");
+        glVertexAttribPointer = (gl_vertex_attrib_pointer *)getOpenGLFunction("glVertexAttribPointer");
     }
 }
 
-uint32 CreateShader(char *vertSource, char *fragSource)
+uint32 CreateShader(const char *vertSource, const char *fragSource)
 {
+    const char *vertSources[] = {
+        vertSource
+    };
+
     uint32 vert = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vert, 1, &vertSource, 0);
+    glShaderSource(vert, 1, vertSources, 0);
     glCompileShader(vert);
 
     int32 status = 0;
@@ -72,8 +88,12 @@ uint32 CreateShader(char *vertSource, char *fragSource)
         printf("Vertex shader error: %s\n", infoLog);
     }
 
+    const char *fragSources[] = {
+        fragSource
+    };
+
     uint32 frag = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(frag, 1, &fragSource, 0);
+    glShaderSource(frag, 1, fragSources, 0);
     glCompileShader(frag);
 
     glGetShaderiv(frag, GL_COMPILE_STATUS, &status);
@@ -89,15 +109,39 @@ uint32 CreateShader(char *vertSource, char *fragSource)
     glAttachShader(program, frag);
     glLinkProgram(program);
 
-    
+    return program;
 }
 
 void CreateOpenGLShaders(uint32 *shaders)
 {
-    for (uint32 shaderIndex = 0; shaderIndex > ShaderTypeCount; shaderIndex++)
-    {
-        shaders[shaderIndex] = glCreateProgram();
+    const char *vertShaders[ShaderTypeCount] = {
+        [ShaderType_Rect] = R""""(
+            #version 330 core
+            
+            layout (location = 0) in vec2 position;
+            
+            void main()
+            {
+               gl_Position = vec4(position, 0.0, 1.0);
+            }
+        )"""",
+    };
 
-        
+    const char *fragShaders[ShaderTypeCount] = {
+        [ShaderType_Rect] = R""""(
+            #version 330 core
+            
+            layout (location = 0) out vec4 outColor;
+            
+            void main()
+            {
+               outColor = vec4(0.5, 0.1, 0.1, 1.0);
+            }
+        )"""",
+    };
+
+    for (uint32 shaderIndex = 0; shaderIndex < ShaderTypeCount; shaderIndex++)
+    {
+        shaders[shaderIndex] = CreateShader(vertShaders[shaderIndex], fragShaders[shaderIndex]);
     }
 }
