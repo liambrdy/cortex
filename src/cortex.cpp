@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include <GL/gl.h>
+//#include <GL/GL.h>
 
 #include "cortex.h"
 #include "cortex_platform.h"
@@ -92,15 +92,15 @@ extern "C" GAME_UPDATE(GameUpdate)
         gameState->renderStackCount = 0;
 
         LoadAllOpenGLFunctions(memory->getOpenGLFunction);
+        CreateOpenGLShaders(gameState->shaders);
 
         glCreateVertexArrays(1, &gameState->rectVao);
         glBindVertexArray(gameState->rectVao);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(real32), 0);
 
         gameState->rectBuffer = CreateOpenGLBuffer(gameState, GL_ARRAY_BUFFER, 100);
-
-        CreateOpenGLShaders(gameState->shaders);
+        
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(real32), 0);
 
         memory->isInitialized = true;
     }
@@ -125,7 +125,7 @@ extern "C" GAME_UPDATE(GameUpdate)
 
             case RenderCommandType_Viewport:
             {
-                glViewport(cmd->rect.x, cmd->rect.y, cmd->rect.z, cmd->rect.w);
+                glViewport((int) cmd->rect.x, (int) cmd->rect.y, (int) cmd->rect.z, (int) cmd->rect.w);
             } break;
 
             case RenderCommandType_Rect:
@@ -134,8 +134,10 @@ extern "C" GAME_UPDATE(GameUpdate)
                 v2 dim = {cmd->rect.z, cmd->rect.w};
                 PushV2ToBuffer(&gameState->rectBuffer, min);
                 PushV2ToBuffer(&gameState->rectBuffer, V2(min.x + dim.x, min.y));
-                PushV2ToBuffer(&gameState->rectBuffer, V2(min.x, min.y + dim.y));
                 PushV2ToBuffer(&gameState->rectBuffer, min + dim);
+                PushV2ToBuffer(&gameState->rectBuffer, min + dim);
+                PushV2ToBuffer(&gameState->rectBuffer, V2(min.x, min.y + dim.y));
+                PushV2ToBuffer(&gameState->rectBuffer, min);
             } break;
 
             default: {}
@@ -148,7 +150,7 @@ extern "C" GAME_UPDATE(GameUpdate)
         glBindBuffer(GL_ARRAY_BUFFER, gameState->rectBuffer.handle);
         glBufferSubData(GL_ARRAY_BUFFER, 0, gameState->rectBuffer.bufferSize * sizeof(real32), gameState->rectBuffer.buffer);
         glUseProgram(gameState->shaders[ShaderType_Rect]);
-        glDrawArrays(GL_TRIANGLES, 0, gameState->rectBuffer.bufferSize);
+        glDrawArrays(GL_TRIANGLES, 0, gameState->rectBuffer.bufferSize / 2);
         gameState->rectBuffer.bufferSize = 0;
     }
 }

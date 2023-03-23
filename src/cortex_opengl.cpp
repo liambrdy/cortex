@@ -1,7 +1,43 @@
-#include <GL/gl.h>
+//#include <GL/gl.h>
 
 #include "cortex.h"
 #include "cortex_platform.h"
+
+typedef unsigned int GLenum;
+typedef unsigned char GLboolean;
+typedef unsigned int GLbitfield;
+typedef signed char GLbyte;
+typedef short GLshort;
+typedef int GLint;
+typedef int GLsizei;
+typedef unsigned char GLubyte;
+typedef unsigned short GLushort;
+typedef unsigned int GLuint;
+typedef float GLfloat;
+typedef float GLclampf;
+typedef double GLdouble;
+typedef double GLclampd;
+typedef void GLvoid;
+
+typedef char GLchar;
+typedef size_t GLsizeiptr;
+typedef intptr_t GLintptr;
+
+#define GL_TRIANGLES 0x0004
+#define GL_VERTEX_SHADER 0x8B31
+#define GL_FRAGMENT_SHADER 0x8B30
+#define GL_COMPILE_STATUS 0x8B81
+#define GL_LINK_STATUS 0x8B82
+#define GL_DYNAMIC_DRAW 0x88E8
+#define GL_ARRAY_BUFFER 0x8892
+#define GL_FALSE 0
+#define GL_FLOAT 0x1406
+#define GL_COLOR_BUFFER_BIT 0x00004000
+
+extern "C" void glDrawArrays(GLenum mode, GLint first, GLsizei count);
+extern "C" void glClear(GLbitfield mask);
+extern "C" void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha);
+extern "C" void glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
 
 typedef void gl_create_vertex_arrays(GLsizei n, GLuint *arrays);
 typedef void gl_bind_vertex_array(GLuint array);
@@ -115,7 +151,7 @@ uint32 CreateShader(const char *vertSource, const char *fragSource)
 void CreateOpenGLShaders(uint32 *shaders)
 {
     const char *vertShaders[ShaderTypeCount] = {
-        [ShaderType_Rect] = R""""(
+        R""""(
             #version 330 core
             
             layout (location = 0) in vec2 position;
@@ -128,7 +164,7 @@ void CreateOpenGLShaders(uint32 *shaders)
     };
 
     const char *fragShaders[ShaderTypeCount] = {
-        [ShaderType_Rect] = R""""(
+        R""""(
             #version 330 core
             
             layout (location = 0) out vec4 outColor;
