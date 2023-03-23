@@ -58,6 +58,10 @@ typedef void gl_buffer_sub_data(GLenum target, GLintptr offset, GLsizeiptr size,
 typedef void gl_use_program(GLuint program);
 typedef void gl_enable_vertex_attrib_array(GLuint index);
 typedef void gl_vertex_attrib_pointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void * pointer);
+typedef void gl_create_textures(GLenum target, GLsizei n, GLuint *textures);
+typedef void gl_bind_texture(GLenum target, GLuint texture);
+typedef void gl_create_framebuffers(GLsizei n, GLuint *framebuffers);
+typedef void gl_bind_framebuffer(GLenum target, GLuint framebuffer);
 
 global gl_create_vertex_arrays *glCreateVertexArrays;
 global gl_bind_vertex_array *glBindVertexArray;
@@ -78,6 +82,10 @@ global gl_buffer_sub_data *glBufferSubData;
 global gl_use_program *glUseProgram;
 global gl_enable_vertex_attrib_array *glEnableVertexAttribArray;
 global gl_vertex_attrib_pointer *glVertexAttribPointer;
+global gl_create_textures *glCreateTextures;
+global gl_bind_texture *glBindTexture;
+global gl_create_framebuffers *glCreateFramebuffers;
+global gl_bind_framebuffer *glBindFramebuffer;
 
 void LoadAllOpenGLFunctions(platform_get_opengl_function *getOpenGLFunction)
 {
@@ -102,6 +110,10 @@ void LoadAllOpenGLFunctions(platform_get_opengl_function *getOpenGLFunction)
         glUseProgram = (gl_use_program *)getOpenGLFunction("glUseProgram");
         glEnableVertexAttribArray = (gl_enable_vertex_attrib_array *)getOpenGLFunction("glEnableVertexAttribArray");
         glVertexAttribPointer = (gl_vertex_attrib_pointer *)getOpenGLFunction("glVertexAttribPointer");
+        glCreateTextures = (gl_create_textures *)getOpenGLFunction("glCreateTextures");
+        glBindTexture = (gl_bind_texture *)getOpenGLFunction("glBindTexture");
+        glCreateFramebuffers = (gl_create_framebuffers *)getOpenGLFunction("glCreateFramebuffers");
+        glBindFramebuffer = (gl_bind_texture *)getOpenGLFunction("glBindFramebuffer");
     }
 }
 
