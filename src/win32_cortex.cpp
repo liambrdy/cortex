@@ -1,4 +1,5 @@
 #include <Windows.h>
+#include <gl/GL.h>
 
 #include "cortex_platform.h"
 
@@ -7,8 +8,23 @@
 #define WGL_CONTEXT_PROFILE_MASK_ARB            0x9126
 #define WGL_CONTEXT_CORE_PROFILE_BIT_ARB        0x00000001
 
+#define WGL_DRAW_TO_WINDOW_ARB                    0x2001
+#define WGL_ACCELERATION_ARB                      0x2003
+#define WGL_SUPPORT_OPENGL_ARB                    0x2010
+#define WGL_DOUBLE_BUFFER_ARB                     0x2011
+#define WGL_PIXEL_TYPE_ARB                        0x2013
+#define WGL_COLOR_BITS_ARB                        0x2014
+#define WGL_DEPTH_BITS_ARB                        0x2022
+#define WGL_STENCIL_BITS_ARB                      0x2023
+
+#define WGL_FULL_ACCELERATION_ARB                 0x2027
+#define WGL_TYPE_RGBA_ARB                         0x202B
+
 typedef HGLRC wgl_create_context_attribs_arb(HDC hDC, HGLRC hShareContext, const int *attribList);
 global wgl_create_context_attribs_arb *wglCreateContextAttribsARB;
+
+typedef BOOL wgl_choose_pixel_format_arb(HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
+global wgl_choose_pixel_format_arb *wglChoosePixelFormatARB;
 
 global bool globalRunning;
 
@@ -97,11 +113,13 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hInstancePrev, PSTR cmdline,
 
         HDC dc = GetDC(hwnd);
         PIXELFORMATDESCRIPTOR pfd = {sizeof(pfd), 1};
-        pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_SUPPORT_COMPOSITION | PFD_DOUBLEBUFFER;
         pfd.iPixelType = PFD_TYPE_RGBA;
+        pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
         pfd.cColorBits = 32;
         pfd.cAlphaBits = 8;
         pfd.iLayerType = PFD_MAIN_PLANE;
+        pfd.cDepthBits = 24;
+        pfd.cStencilBits = 8;
         int pixelFormat = ChoosePixelFormat(dc, &pfd);
         SetPixelFormat(dc, pixelFormat, &pfd);
 
@@ -109,6 +127,29 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hInstancePrev, PSTR cmdline,
         wglMakeCurrent(dc, wglContext);
 
         wglCreateContextAttribsARB = (wgl_create_context_attribs_arb *)wglGetProcAddress("wglCreateContextAttribsARB");
+        wglChoosePixelFormatARB = (wgl_choose_pixel_format_arb *)wglGetProcAddress("wglChoosePixelFormatARB");
+        if (wglChoosePixelFormatARB)
+        {
+            int pixel_format_attribs[] = {
+                WGL_DRAW_TO_WINDOW_ARB,     GL_TRUE,
+                WGL_SUPPORT_OPENGL_ARB,     GL_TRUE,
+                WGL_DOUBLE_BUFFER_ARB,      GL_TRUE,
+                WGL_ACCELERATION_ARB,       WGL_FULL_ACCELERATION_ARB,
+                WGL_PIXEL_TYPE_ARB,         WGL_TYPE_RGBA_ARB,
+                WGL_COLOR_BITS_ARB,         32,
+                WGL_DEPTH_BITS_ARB,         24,
+                WGL_STENCIL_BITS_ARB,       8,
+                0
+            };
+
+            int pixel_format;
+            UINT num_formats;
+            wglChoosePixelFormatARB(dc, pixel_format_attribs, 0, 1, &pixel_format, &num_formats);
+
+            PIXELFORMATDESCRIPTOR newPfd;
+            DescribePixelFormat(dc, pixel_format, sizeof(newPfd), &newPfd);
+            SetPixelFormat(dc, pixel_format, &newPfd);
+        }
         if (wglCreateContextAttribsARB)
         {
             int const createAttribs[] = {
@@ -118,7 +159,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hInstancePrev, PSTR cmdline,
                 0,
             };
 
-            HGLRC newContext = wglCreateContextAttribsARB(dc, wglContext, createAttribs);
+            HGLRC newContext = wglCreateContextAttribsARB(dc, 0, createAttribs);
             wglMakeCurrent(dc, newContext);
         }
 
