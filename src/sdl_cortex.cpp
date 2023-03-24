@@ -78,6 +78,8 @@ int main()
     SDL_GL_CreateContext(window);
     if (window)
     {
+        SDL_GL_SetSwapInterval(1);
+
         game_memory memory;
         memory.permanentStorageSize = Megabytes(64);
         memory.permanentStorage = malloc(memory.permanentStorageSize);

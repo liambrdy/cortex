@@ -189,4 +189,35 @@ struct rectangle2
     v2 max;
 };
 
+union m4
+{
+    real32 e[4][4];
+};
+
+m4 M4Identity()
+{
+    m4 result = {};
+    result.e[0][0] = 1.0f;
+    result.e[1][1] = 1.0f;
+    result.e[2][2] = 1.0f;
+    result.e[3][3] = 1.0f;
+
+    return result;
+}
+
+m4 M4Orthographic(real32 left, real32 right, real32 bottom, real32 top, real32 near, real32 far)
+{
+    m4 result = M4Identity();
+
+    result.e[0][0] = 2.0f / (right - left);
+    result.e[1][1] = 2.0f / (top - bottom);
+    result.e[2][2] = -2.0f / (far - near);
+    result.e[3][3] = 1.0f;
+    result.e[3][0] = (left + right) / (left - right);
+    result.e[3][1] = (bottom + top) / (bottom - top);
+    result.e[3][2] = (far + near) / (near - far);
+
+    return result;
+}
+
 #endif

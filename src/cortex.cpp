@@ -138,17 +138,22 @@ extern "C" GAME_UPDATE(GameUpdate)
         GLenum drawBuffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT0 + 1};
         glDrawBuffers(ArrayCount(drawBuffers), drawBuffers);
 
+        real32 aspect = 1280.0f / 720.0f;
+        gameState->perspective = M4Orthographic(-aspect, aspect, -aspect, aspect, 0.01f, 100.0f);
+
         memory->isInitialized = true;
     }
+
 
     gameState->renderStackCount = 0;
     
     PushClear(gameState, V4(0.0f, 0.1f, 0.3f, 1.0f));
     PushViewport(gameState, V2(0.0f, 0.0f), V2(1280.0f, 720.0f));
 
-    for (real32 x = -1.0f; x < 1.0f; x += 0.2f)
+    real32 aspect = 1280.0f / 720.0f;
+    for (real32 x = -aspect; x < aspect; x += aspect / 10)
     {
-        for (real32 y = -1.0f; y < 1.0f; y += 0.2f)
+        for (real32 y = -aspect; y < aspect; y += aspect / 10)
         {
             real32 u = (x+1.0f) / 2.0f;
             real32 v = (y+1.0f) / 2.0f;
@@ -201,6 +206,7 @@ extern "C" GAME_UPDATE(GameUpdate)
         glBindBuffer(GL_ARRAY_BUFFER, gameState->rectBuffer.handle);
         glBufferSubData(GL_ARRAY_BUFFER, 0, gameState->rectBuffer.bufferSize * sizeof(real32), gameState->rectBuffer.buffer);
         glUseProgram(gameState->shaders[ShaderType_Rect]);
+        glUniformMatrix4fv(glGetUniformLocation(gameState->shaders[ShaderType_Rect], "perspective"), 1, GL_FALSE, &gameState->perspective.e[0][0]);
         glDrawArrays(GL_TRIANGLES, 0, gameState->rectBuffer.bufferSize / 2);
         gameState->rectBuffer.bufferSize = 0;
     }

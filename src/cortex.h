@@ -39,6 +39,7 @@ struct opengl_buffer
 enum shader_type
 {
     ShaderType_Rect = 0,
+    ShaderType_Lights,
     ShaderType_Final,
     ShaderTypeCount
 };
@@ -55,6 +56,8 @@ struct game_state
 
     render_command *renderStack;
     uint32 renderStackCount;
+
+    m4 perspective;
 
     uint32 rectVao;
     opengl_buffer rectBuffer;

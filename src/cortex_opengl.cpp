@@ -87,6 +87,8 @@ GL_FUN(glBindFramebuffer, void, gl_bind_framebuffer, GLenum target, GLuint frame
 GL_FUN(glFramebufferTexture, void, gl_framebuffer_texture, GLenum target, GLenum attachment, GLuint texture, GLint level);
 GL_FUN(glDrawBuffers, void, gl_draw_buffers, GLsizei n, const GLenum *bufs);
 GL_FUN(glBlitFramebuffer, void, gl_blit_framebuffer, GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
+GL_FUN(glGetUniformLocation, GLint, gl_get_uniform_location, GLuint program, const GLchar *name);
+GL_FUN(glUniformMatrix4fv, void, gl_uniform_matrix_4fv, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
 
 #undef GL_FUN
 
@@ -123,6 +125,8 @@ internal void LoadAllOpenGLFunctions(platform_get_opengl_function *getOpenGLFunc
         GL_FUN(glFramebufferTexture, gl_framebuffer_texture);
         GL_FUN(glDrawBuffers, gl_draw_buffers);
         GL_FUN(glBlitFramebuffer, gl_blit_framebuffer);
+        GL_FUN(glGetUniformLocation, gl_get_uniform_location);
+        GL_FUN(glUniformMatrix4fv, gl_uniform_matrix_4fv);
 #undef GL_FUN
     }
 }
@@ -177,18 +181,35 @@ internal uint32 CreateShader(const char *vertSource, const char *fragSource)
 internal void CreateOpenGLShaders(uint32 *shaders)
 {
     const char *vertShaders[ShaderTypeCount] = {
-        R""""(            
+        R""""(     
+            // rect       
             layout (location = 0) in vec2 position;
             layout (location = 1) in vec4 color;
             out vec4 fragColor;
+            uniform mat4 perspective;
             
             void main()
             {
                 fragColor = color;
-                gl_Position = vec4(position, 0.0, 1.0);
+                gl_Position = perspective * vec4(position, 0.0, 1.0);
             }
         )"""",
         R""""(
+            // lights
+            out vec2 fragUv;
+
+            void main()
+            {
+                vec4 vertices[] = vec4[](vec4(0, 0, 0, 1),
+                                        vec4(0, 1, 0, 1),
+                                        vec4(1, 0, 0, 1),
+                                        vec4(1, 1, 0, 1));
+                fragUv = vertices[gl_VertexID].xy;
+                gl_Position = vec4(vertices[gl_VertexID].xy * 2 - 1, 0.0, 1.0);
+            }
+        )"""",
+        R""""(
+            // final
             out vec2 fragUv;
 
             void main()
@@ -204,7 +225,8 @@ internal void CreateOpenGLShaders(uint32 *shaders)
     };
 
     const char *fragShaders[ShaderTypeCount] = {
-        R""""(            
+        R""""(       
+            // rect
             layout (location = 0) out vec4 outColor;
             layout (location = 1) out vec4 outNormal;
             in vec4 fragColor;
@@ -216,6 +238,16 @@ internal void CreateOpenGLShaders(uint32 *shaders)
             }
         )"""",
         R""""(
+            // lights
+            layout (location = 0) out vec4 outColor;
+
+            void main()
+            {
+                outColor = vec4(1.0, 1.0, 1.0, 1.0);
+            }
+        )"""",
+        R""""(
+            // final
             layout (location = 0) out vec4 outColor;
 
             in vec2 fragUv;
