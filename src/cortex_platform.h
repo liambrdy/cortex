@@ -33,6 +33,7 @@ typedef double real64;
 #endif
 
 #define InvalidCodePath Assert(!"InvalidCodePath");
+#define Unused(var) (void)(var)
 
 #define ArrayCount(arr) (sizeof(arr) / sizeof((arr)[0]))
 

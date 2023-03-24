@@ -75,6 +75,12 @@ int main()
     SDL_Init(SDL_INIT_VIDEO);
 
     SDL_Window *window = SDL_CreateWindow("Cortex", 0, 0, 1280, 720, SDL_WINDOW_OPENGL);
+
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
+
     SDL_GL_CreateContext(window);
     if (window)
     {
@@ -85,6 +91,10 @@ int main()
         memory.permanentStorage = malloc(memory.permanentStorageSize);
 
         memory.getOpenGLFunction = PlatformGetOpenGLFunction;
+
+        game_input input;
+        input.windowWidth = 1280;
+        input.windowHeight = 720;
 
         Assert(memory.permanentStorage);
 
@@ -102,7 +112,7 @@ int main()
 
             if (gameCode.gameUpdate)
             {
-                gameCode.gameUpdate(&memory);
+                gameCode.gameUpdate(&memory, &input);
             }
 
             SDL_GL_SwapWindow(window);
