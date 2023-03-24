@@ -217,11 +217,11 @@ internal void CreateOpenGLShaders(uint32 *shaders)
             in vec2 fragUv;
 
             uniform sampler2D colorTexture;
-            uniform sampler2D normalTexture;
+            //uniform sampler2D normalTexture;
 
             void main()
             {
-                outColor = vec4(1.0, 0.0, 0.0, 1.0);
+                outColor = texture(colorTexture, fragUv);
             }
         )"""",
     };

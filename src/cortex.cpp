@@ -217,6 +217,6 @@ extern "C" GAME_UPDATE(GameUpdate)
     GLenum error = glGetError();
     if (error)
     {
-        fprintf(stderr, "[OpenGL Error] %i\n", (int) error);
+        printf("[OpenGL Error] %i\n", (int) error);
     }
 }
