@@ -24,6 +24,8 @@ typedef size_t GLsizeiptr;
 typedef intptr_t GLintptr;
 
 #define GL_TRIANGLES 0x0004
+#define GL_TRIANGLE_STRIP 0x0005
+#define GL_TRIANGLE_FAN 0x0006
 #define GL_VERTEX_SHADER 0x8B31
 #define GL_FRAGMENT_SHADER 0x8B30
 #define GL_COMPILE_STATUS 0x8B81
@@ -33,98 +35,103 @@ typedef intptr_t GLintptr;
 #define GL_FALSE 0
 #define GL_FLOAT 0x1406
 #define GL_COLOR_BUFFER_BIT 0x00004000
+#define GL_TEXTURE_2D 0x0DE1
+#define GL_RGB 0x1907
+#define GL_UNSIGNED_BYTE 0x1401
+#define GL_FRAMEBUFFER 0x8D40
+#define GL_COLOR_ATTACHMENT0 0x8CE0
+#define GL_NEAREST 0x2600
+#define GL_LINEAR 0x2601
+#define GL_READ_FRAMEBUFFER 0x8CA8
+#define GL_DRAW_FRAMEBUFFER 0x8CA9
 
 extern "C" void glDrawArrays(GLenum mode, GLint first, GLsizei count);
 extern "C" void glClear(GLbitfield mask);
 extern "C" void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha);
 extern "C" void glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
 
-typedef void gl_create_vertex_arrays(GLsizei n, GLuint *arrays);
-typedef void gl_bind_vertex_array(GLuint array);
-typedef void gl_create_buffers(GLsizei n, GLuint *buffers);
-typedef void gl_bind_buffer(GLenum target, GLuint buffer);
-typedef void gl_buffer_data(GLenum target, GLsizeiptr size, const void * data, GLenum usage);
-typedef GLuint gl_create_shader(GLenum shaderType);
-typedef GLuint gl_create_program();
-typedef void gl_shader_source(GLuint shader, GLsizei count, const GLchar **string, const GLint *length);
-typedef void gl_compile_shader(GLuint shader);
-typedef void gl_get_shader_iv(GLuint shader, GLenum pname, GLint *params);
-typedef void gl_get_shader_info_log(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
-typedef void gl_get_program_iv(GLuint program, GLenum pname, GLint *params);
-typedef void gl_get_program_info_log(GLuint program, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
-typedef void gl_attach_shader(GLuint program, GLuint shader);
-typedef void gl_link_program(GLuint program);
-typedef void gl_buffer_sub_data(GLenum target, GLintptr offset, GLsizeiptr size, const void * data);
-typedef void gl_use_program(GLuint program);
-typedef void gl_enable_vertex_attrib_array(GLuint index);
-typedef void gl_vertex_attrib_pointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void * pointer);
-typedef void gl_create_textures(GLenum target, GLsizei n, GLuint *textures);
-typedef void gl_bind_texture(GLenum target, GLuint texture);
-typedef void gl_create_framebuffers(GLsizei n, GLuint *framebuffers);
-typedef void gl_bind_framebuffer(GLenum target, GLuint framebuffer);
+#define GL_FUN(name, type_ret, type, ...) \
+typedef type_ret type(__VA_ARGS__); \
+global type *name;
 
-global gl_create_vertex_arrays *glCreateVertexArrays;
-global gl_bind_vertex_array *glBindVertexArray;
-global gl_create_buffers *glCreateBuffers;
-global gl_bind_buffer *glBindBuffer;
-global gl_buffer_data *glBufferData;
-global gl_create_shader *glCreateShader;
-global gl_create_program *glCreateProgram;
-global gl_shader_source *glShaderSource;
-global gl_compile_shader *glCompileShader;
-global gl_get_shader_iv *glGetShaderiv;
-global gl_get_program_iv *glGetProgramiv;
-global gl_get_shader_info_log *glGetShaderInfoLog;
-global gl_get_program_info_log *glGetProgramInfoLog;
-global gl_attach_shader *glAttachShader;
-global gl_link_program *glLinkProgram;
-global gl_buffer_sub_data *glBufferSubData;
-global gl_use_program *glUseProgram;
-global gl_enable_vertex_attrib_array *glEnableVertexAttribArray;
-global gl_vertex_attrib_pointer *glVertexAttribPointer;
-global gl_create_textures *glCreateTextures;
-global gl_bind_texture *glBindTexture;
-global gl_create_framebuffers *glCreateFramebuffers;
-global gl_bind_framebuffer *glBindFramebuffer;
+GL_FUN(glCreateVertexArrays, void, gl_create_vertex_arrays, GLsizei n, GLuint *arrays);
+GL_FUN(glBindVertexArray, void, gl_bind_vertex_array, GLuint array);
+GL_FUN(glCreateBuffers, void, gl_create_buffers, GLsizei n, GLuint *buffers);
+GL_FUN(glBindBuffer, void, gl_bind_buffer, GLenum target, GLuint buffer);
+GL_FUN(glBufferData, void, gl_buffer_data, GLenum target, GLsizeiptr size, const void * data, GLenum usage);
+GL_FUN(glCreateShader, GLuint, gl_create_shader, GLenum shaderType);
+GL_FUN(glCreateProgram, GLuint, gl_create_program);
+GL_FUN(glShaderSource, void, gl_shader_source, GLuint shader, GLsizei count, const GLchar **string, const GLint *length);
+GL_FUN(glCompileShader, void, gl_compile_shader, GLuint shader);
+GL_FUN(glGetShaderiv, void, gl_get_shader_iv, GLuint shader, GLenum pname, GLint *params);
+GL_FUN(glGetProgramiv, void, gl_get_program_iv, GLuint program, GLenum pname, GLint *params);
+GL_FUN(glGetShaderInfoLog, void, gl_get_shader_info_log, GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
+GL_FUN(glGetProgramInfoLog, void, gl_get_program_info_log, GLuint program, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
+GL_FUN(glAttachShader, void, gl_attach_shader, GLuint program, GLuint shader);
+GL_FUN(glLinkProgram, void, gl_link_program, GLuint program);
+GL_FUN(glBufferSubData, void, gl_buffer_sub_data, GLenum target, GLintptr offset, GLsizeiptr size, const void * data);
+GL_FUN(glUseProgram, void, gl_use_program, GLuint program);
+GL_FUN(glEnableVertexAttribArray, void, gl_enable_vertex_attrib_array, GLuint index);
+GL_FUN(glVertexAttribPointer, void, gl_vertex_attrib_pointer, GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void * pointer);
+GL_FUN(glCreateTextures, void, gl_create_textures, GLenum target, GLsizei n, GLuint *textures);
+GL_FUN(glBindTexture, void, gl_bind_texture, GLenum target, GLuint texture);
+GL_FUN(glCreateFramebuffers, void, gl_create_framebuffers, GLsizei n, GLuint *framebuffers);
+GL_FUN(glBindFramebuffer, void, gl_bind_framebuffer, GLenum target, GLuint framebuffer);
+GL_FUN(glTexImage2D, void, gl_tex_image_2d, GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void * data);
+GL_FUN(glFramebufferTexture, void, gl_framebuffer_texture, GLenum target, GLenum attachment, GLuint texture, GLint level);
+GL_FUN(glDrawBuffers, void, gl_draw_buffers, GLsizei n, const GLenum *bufs);
+GL_FUN(glBlitFramebuffer, void, gl_blit_framebuffer, GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
 
-void LoadAllOpenGLFunctions(platform_get_opengl_function *getOpenGLFunction)
+#undef GL_FUN
+
+internal void LoadAllOpenGLFunctions(platform_get_opengl_function *getOpenGLFunction)
 {
     if (getOpenGLFunction)
     {
-        glCreateVertexArrays = (gl_create_vertex_arrays *)getOpenGLFunction("glCreateVertexArrays");
-        glBindVertexArray = (gl_bind_vertex_array *)getOpenGLFunction("glBindVertexArray");
-        glCreateBuffers = (gl_create_buffers *)getOpenGLFunction("glCreateBuffers");
-        glBindBuffer = (gl_bind_buffer *)getOpenGLFunction("glBindBuffer");
-        glBufferData = (gl_buffer_data *)getOpenGLFunction("glBufferData");
-        glCreateShader = (gl_create_shader *)getOpenGLFunction("glCreateShader");
-        glCreateProgram = (gl_create_program *)getOpenGLFunction("glCreateProgram");
-        glShaderSource = (gl_shader_source *)getOpenGLFunction("glShaderSource");
-        glCompileShader = (gl_compile_shader *)getOpenGLFunction("glCompileShader");
-        glGetShaderiv = (gl_get_shader_iv *)getOpenGLFunction("glGetShaderiv");
-        glGetProgramiv = (gl_get_program_iv *)getOpenGLFunction("glGetProgramiv");
-        glGetShaderInfoLog = (gl_get_shader_info_log *)getOpenGLFunction("glGetShaderInfoLog");
-        glGetProgramInfoLog = (gl_get_program_info_log *)getOpenGLFunction("glGetProgramInfoLog");
-        glAttachShader = (gl_attach_shader *)getOpenGLFunction("glAttachShader");
-        glLinkProgram = (gl_link_program *)getOpenGLFunction("glLinkProgram");
-        glBufferSubData = (gl_buffer_sub_data *)getOpenGLFunction("glBufferSubData");
-        glUseProgram = (gl_use_program *)getOpenGLFunction("glUseProgram");
-        glEnableVertexAttribArray = (gl_enable_vertex_attrib_array *)getOpenGLFunction("glEnableVertexAttribArray");
-        glVertexAttribPointer = (gl_vertex_attrib_pointer *)getOpenGLFunction("glVertexAttribPointer");
-        glCreateTextures = (gl_create_textures *)getOpenGLFunction("glCreateTextures");
-        glBindTexture = (gl_bind_texture *)getOpenGLFunction("glBindTexture");
-        glCreateFramebuffers = (gl_create_framebuffers *)getOpenGLFunction("glCreateFramebuffers");
-        glBindFramebuffer = (gl_bind_texture *)getOpenGLFunction("glBindFramebuffer");
+#define GL_FUN(name, type) \
+        name = (type *)getOpenGLFunction(#name);
+        GL_FUN(glCreateVertexArrays, gl_create_vertex_arrays);
+        GL_FUN(glBindVertexArray, gl_bind_vertex_array);
+        GL_FUN(glCreateBuffers, gl_create_buffers);
+        GL_FUN(glBindBuffer, gl_bind_buffer);
+        GL_FUN(glBufferData, gl_buffer_data);
+        GL_FUN(glCreateShader, gl_create_shader);
+        GL_FUN(glCreateProgram, gl_create_program);
+        GL_FUN(glShaderSource, gl_shader_source);
+        GL_FUN(glCompileShader, gl_compile_shader);
+        GL_FUN(glGetShaderiv, gl_get_shader_iv);
+        GL_FUN(glGetProgramiv, gl_get_program_iv);
+        GL_FUN(glGetShaderInfoLog, gl_get_shader_info_log);
+        GL_FUN(glGetProgramInfoLog, gl_get_program_info_log);
+        GL_FUN(glAttachShader, gl_attach_shader);
+        GL_FUN(glLinkProgram, gl_link_program);
+        GL_FUN(glBufferSubData, gl_buffer_sub_data);
+        GL_FUN(glUseProgram, gl_use_program);
+        GL_FUN(glEnableVertexAttribArray, gl_enable_vertex_attrib_array);
+        GL_FUN(glVertexAttribPointer, gl_vertex_attrib_pointer);
+        GL_FUN(glCreateTextures, gl_create_textures);
+        GL_FUN(glBindTexture, gl_bind_texture);
+        GL_FUN(glCreateFramebuffers, gl_create_framebuffers);
+        GL_FUN(glBindFramebuffer, gl_bind_framebuffer);
+        GL_FUN(glTexImage2D, gl_tex_image_2d);
+        GL_FUN(glFramebufferTexture, gl_framebuffer_texture);
+        GL_FUN(glDrawBuffers, gl_draw_buffers);
+        GL_FUN(glBlitFramebuffer, gl_blit_framebuffer);
+#undef GL_FUN
     }
 }
 
-uint32 CreateShader(const char *vertSource, const char *fragSource)
+internal uint32 CreateShader(const char *vertSource, const char *fragSource)
 {
+    local_persist const char *HEADER = "#version 330 core";
+
     const char *vertSources[] = {
+        HEADER,
         vertSource
     };
 
     uint32 vert = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vert, 1, vertSources, 0);
+    glShaderSource(vert, 2, vertSources, 0);
     glCompileShader(vert);
 
     int32 status = 0;
@@ -137,11 +144,12 @@ uint32 CreateShader(const char *vertSource, const char *fragSource)
     }
 
     const char *fragSources[] = {
+        HEADER,
         fragSource
     };
 
     uint32 frag = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(frag, 1, fragSources, 0);
+    glShaderSource(frag, 2, fragSources, 0);
     glCompileShader(frag);
 
     glGetShaderiv(frag, GL_COMPILE_STATUS, &status);
@@ -160,12 +168,10 @@ uint32 CreateShader(const char *vertSource, const char *fragSource)
     return program;
 }
 
-void CreateOpenGLShaders(uint32 *shaders)
+internal void CreateOpenGLShaders(uint32 *shaders)
 {
     const char *vertShaders[ShaderTypeCount] = {
-        R""""(
-            #version 330 core
-            
+        R""""(            
             layout (location = 0) in vec2 position;
             layout (location = 1) in vec4 color;
             out vec4 fragColor;
@@ -176,18 +182,44 @@ void CreateOpenGLShaders(uint32 *shaders)
                 gl_Position = vec4(position, 0.0, 1.0);
             }
         )"""",
+        R""""(
+            out vec2 fragUv;
+
+            void main()
+            {
+                vec4 vertices[] = vec4[](vec4(0, 0, 0, 1),
+                                        vec4(0, 1, 0, 1),
+                                        vec4(1, 0, 0, 1),
+                                        vec4(1, 1, 0, 1));
+                fragUv = vertices[gl_VertexID].xy;
+                gl_Position = vertices[gl_VertexID] * 2 - 1;
+            }
+        )"""",
     };
 
     const char *fragShaders[ShaderTypeCount] = {
-        R""""(
-            #version 330 core
-            
+        R""""(            
             layout (location = 0) out vec4 outColor;
+            layout (location = 1) out vec4 outNormal;
             in vec4 fragColor;
 
             void main()
             {
                 outColor = fragColor;
+                outNormal = vec4(0, 1, 0, 1);
+            }
+        )"""",
+        R""""(
+            layout (location = 0) out vec4 outColor;
+
+            in vec2 fragUv;
+
+            uniform sampler2D colorTexture;
+            uniform sampler2D normalTexture;
+
+            void main()
+            {
+                outColor = texture(colorTexture, fragUv) + texture(normalTexture, fragUv);
             }
         )"""",
     };

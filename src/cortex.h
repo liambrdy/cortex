@@ -39,7 +39,14 @@ struct opengl_buffer
 enum shader_type
 {
     ShaderType_Rect = 0,
+    ShaderType_Final,
     ShaderTypeCount
+};
+
+struct render_target
+{
+    uint32 handle;
+    uint32 targets[4];
 };
 
 struct game_state
@@ -53,6 +60,8 @@ struct game_state
     opengl_buffer rectBuffer;
 
     uint32 shaders[ShaderTypeCount];
+
+    render_target gBuffer;
 };
 
 #endif

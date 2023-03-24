@@ -90,6 +90,19 @@ inline void PushRect(game_state *gameState, v4 rect, v4 color)
     PushRenderCommand(gameState, cmd);
 }
 
+internal void AddRenderTexture(render_target *target, uint32 attachment, uint32 width, uint32 height)
+{
+    uint32 texture;
+    glCreateTextures(GL_TEXTURE_2D, 1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+    
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachment, texture, 0);
+
+    target->targets[attachment] = texture;
+}
+
 extern "C" GAME_UPDATE(GameUpdate)
 {
     game_state *gameState = (game_state *)memory->permanentStorage;
@@ -113,6 +126,15 @@ extern "C" GAME_UPDATE(GameUpdate)
 
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 6 * sizeof(real32), (void *)(2 * sizeof(real32)));
+
+        glCreateFramebuffers(1, &gameState->gBuffer.handle);
+        glBindFramebuffer(GL_FRAMEBUFFER, gameState->gBuffer.handle);
+
+        AddRenderTexture(&gameState->gBuffer, 0, 1280, 720);
+        AddRenderTexture(&gameState->gBuffer, 1, 1280, 720);
+
+        GLenum drawBuffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT0 + 1};
+        glDrawBuffers(ArrayCount(drawBuffers), drawBuffers);
 
         memory->isInitialized = true;
     }
@@ -179,4 +201,15 @@ extern "C" GAME_UPDATE(GameUpdate)
         glDrawArrays(GL_TRIANGLES, 0, gameState->rectBuffer.bufferSize / 2);
         gameState->rectBuffer.bufferSize = 0;
     }
+
+    // glBindFramebuffer(GL_READ_FRAMEBUFFER, gameState->gBuffer.handle);
+    // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    // glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glBindTexture(GL_TEXTURE_2D, gameState->gBuffer.targets[0]);
+
+    glUseProgram(gameState->shaders[ShaderType_Final]);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
