@@ -194,6 +194,7 @@ extern "C" GAME_UPDATE(GameUpdate)
 
     if (gameState->rectBuffer.bufferSize > 0)
     {
+        glBindFramebuffer(GL_FRAMEBUFFER, gameState->gBuffer.handle);
         glBindVertexArray(gameState->rectVao);
         glBindBuffer(GL_ARRAY_BUFFER, gameState->rectBuffer.handle);
         glBufferSubData(GL_ARRAY_BUFFER, 0, gameState->rectBuffer.bufferSize * sizeof(real32), gameState->rectBuffer.buffer);
@@ -212,4 +213,10 @@ extern "C" GAME_UPDATE(GameUpdate)
 
     glUseProgram(gameState->shaders[ShaderType_Final]);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    GLenum error = glGetError();
+    if (error)
+    {
+        fprintf(stderr, "[OpenGL Error] %i\n", (int) error);
+    }
 }

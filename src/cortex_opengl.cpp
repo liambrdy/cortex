@@ -49,6 +49,8 @@ extern "C" void glDrawArrays(GLenum mode, GLint first, GLsizei count);
 extern "C" void glClear(GLbitfield mask);
 extern "C" void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha);
 extern "C" void glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
+extern "C" void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void * data);
+extern "C" GLenum glGetError();
 
 #define GL_FUN(name, type_ret, type, ...) \
 typedef type_ret type(__VA_ARGS__); \
@@ -77,7 +79,7 @@ GL_FUN(glCreateTextures, void, gl_create_textures, GLenum target, GLsizei n, GLu
 GL_FUN(glBindTexture, void, gl_bind_texture, GLenum target, GLuint texture);
 GL_FUN(glCreateFramebuffers, void, gl_create_framebuffers, GLsizei n, GLuint *framebuffers);
 GL_FUN(glBindFramebuffer, void, gl_bind_framebuffer, GLenum target, GLuint framebuffer);
-GL_FUN(glTexImage2D, void, gl_tex_image_2d, GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void * data);
+//GL_FUN(glTexImage2D, void, gl_tex_image_2d, GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void * data);
 GL_FUN(glFramebufferTexture, void, gl_framebuffer_texture, GLenum target, GLenum attachment, GLuint texture, GLint level);
 GL_FUN(glDrawBuffers, void, gl_draw_buffers, GLsizei n, const GLenum *bufs);
 GL_FUN(glBlitFramebuffer, void, gl_blit_framebuffer, GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
@@ -113,7 +115,7 @@ internal void LoadAllOpenGLFunctions(platform_get_opengl_function *getOpenGLFunc
         GL_FUN(glBindTexture, gl_bind_texture);
         GL_FUN(glCreateFramebuffers, gl_create_framebuffers);
         GL_FUN(glBindFramebuffer, gl_bind_framebuffer);
-        GL_FUN(glTexImage2D, gl_tex_image_2d);
+        //GL_FUN(glTexImage2D, gl_tex_image_2d);
         GL_FUN(glFramebufferTexture, gl_framebuffer_texture);
         GL_FUN(glDrawBuffers, gl_draw_buffers);
         GL_FUN(glBlitFramebuffer, gl_blit_framebuffer);
@@ -192,7 +194,7 @@ internal void CreateOpenGLShaders(uint32 *shaders)
                                         vec4(1, 0, 0, 1),
                                         vec4(1, 1, 0, 1));
                 fragUv = vertices[gl_VertexID].xy;
-                gl_Position = vertices[gl_VertexID] * 2 - 1;
+                gl_Position = vec4(vertices[gl_VertexID].xy * 2 - 1, 0.0, 1.0);
             }
         )"""",
     };
@@ -219,7 +221,7 @@ internal void CreateOpenGLShaders(uint32 *shaders)
 
             void main()
             {
-                outColor = texture(colorTexture, fragUv) + texture(normalTexture, fragUv);
+                outColor = vec4(1.0, 0.0, 0.0, 1.0);
             }
         )"""",
     };
