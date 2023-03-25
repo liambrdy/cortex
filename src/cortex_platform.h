@@ -43,6 +43,11 @@ typedef double real64;
 #define PLATFORM_GET_OPENGL_FUNCTION(name) void *name(const char *proc)
 typedef PLATFORM_GET_OPENGL_FUNCTION(platform_get_opengl_function);
 
+struct game_input
+{
+    uint32 windowWidth, windowHeight;
+};
+
 struct game_memory
 {
     bool isInitialized;
@@ -53,7 +58,7 @@ struct game_memory
     platform_get_opengl_function *getOpenGLFunction;
 };
 
-#define GAME_UPDATE(name) void name(game_memory *memory)
+#define GAME_UPDATE(name) void name(game_memory *memory, game_input *input)
 typedef GAME_UPDATE(game_update);
 
 #endif

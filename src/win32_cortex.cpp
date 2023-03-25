@@ -106,7 +106,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hInstancePrev, PSTR cmdline,
 
     RegisterClass(&wc);
 
-    HWND hwnd = CreateWindowEx(0, wc.lpszClassName, "Cortex", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInstance, NULL);
+    HWND hwnd = CreateWindowEx(0, wc.lpszClassName, "Cortex", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 1280, 720, NULL, NULL, hInstance, NULL);
     if (hwnd)
     {
         ShowWindow(hwnd, nCmdShow);
@@ -167,6 +167,13 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hInstancePrev, PSTR cmdline,
         gameMemory.permanentStorageSize = Megabytes(64);
         gameMemory.permanentStorage = VirtualAlloc(0, gameMemory.permanentStorageSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
+        RECT dim;
+        GetWindowRect(hwnd, &dim);
+
+        game_input gameInput = {};
+        gameInput.windowWidth = dim.right - dim.left;
+        gameInput.windowHeight = dim.bottom - dim.top;
+
         gameMemory.getOpenGLFunction = GetOpenGLFunction;
 
         game_code gameCode = LoadGameCode("cortex.dll");
@@ -178,7 +185,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hInstancePrev, PSTR cmdline,
 
             if (gameCode.gameUpdate)
             {
-                gameCode.gameUpdate(&gameMemory);
+                gameCode.gameUpdate(&gameMemory, &gameInput);
             }
 
             SwapBuffers(dc);

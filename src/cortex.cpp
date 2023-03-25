@@ -132,32 +132,34 @@ extern "C" GAME_UPDATE(GameUpdate)
         glCreateFramebuffers(1, &gameState->gBuffer.handle);
         glBindFramebuffer(GL_FRAMEBUFFER, gameState->gBuffer.handle);
 
-        AddRenderTexture(&gameState->gBuffer, 0, 1280, 720);
-        AddRenderTexture(&gameState->gBuffer, 1, 1280, 720);
+        AddRenderTexture(&gameState->gBuffer, 0, input->windowWidth, input->windowHeight);
+        AddRenderTexture(&gameState->gBuffer, 1, input->windowWidth, input->windowHeight);
 
         GLenum drawBuffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT0 + 1};
         glDrawBuffers(ArrayCount(drawBuffers), drawBuffers);
 
-        real32 aspect = 1280.0f / 720.0f;
-        gameState->perspective = M4Orthographic(-aspect, aspect, -aspect, aspect, 0.01f, 100.0f);
+        real32 aspect = (real32) input->windowWidth / (real32) input->windowHeight;
+        real32 metersToPixels = 10.0f;
+        gameState->perspective = M4Orthographic(-aspect * metersToPixels, aspect * metersToPixels, -metersToPixels, metersToPixels, -100.0f, 100.0f);
+        gameState->metersToPixels = metersToPixels;
 
         memory->isInitialized = true;
     }
 
-
     gameState->renderStackCount = 0;
     
     PushClear(gameState, V4(0.0f, 0.1f, 0.3f, 1.0f));
-    PushViewport(gameState, V2(0.0f, 0.0f), V2(1280.0f, 720.0f));
+    PushViewport(gameState, V2(0.0f, 0.0f), V2((real32) input->windowWidth, (real32) input->windowHeight));
 
+    real32 metersToPixels = gameState->metersToPixels;
     real32 aspect = 1280.0f / 720.0f;
-    for (real32 x = -aspect; x < aspect; x += aspect / 10)
+    for (real32 x = -metersToPixels*aspect; x < aspect*metersToPixels; x++)
     {
-        for (real32 y = -aspect; y < aspect; y += aspect / 10)
+        for (real32 y = -metersToPixels; y < metersToPixels; y++)
         {
-            real32 u = (x+1.0f) / 2.0f;
-            real32 v = (y+1.0f) / 2.0f;
-            PushRect(gameState, V4(x, y, 0.1f, 0.1f), V4(u, v, 0.0f, 1.0f));
+            real32 u = (x+metersToPixels)/(2*metersToPixels);
+            real32 v = (y+metersToPixels)/(2*metersToPixels);
+            PushRect(gameState, V4(x, y, 1, 1), V4(u, v, 0.0f, 1.0f));
         }
     }
 

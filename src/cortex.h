@@ -65,6 +65,8 @@ struct game_state
     uint32 shaders[ShaderTypeCount];
 
     render_target gBuffer;
+
+    real32 metersToPixels;
 };
 
 #endif
