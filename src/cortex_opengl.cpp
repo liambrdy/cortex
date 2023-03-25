@@ -44,12 +44,16 @@ typedef intptr_t GLintptr;
 #define GL_LINEAR 0x2601
 #define GL_READ_FRAMEBUFFER 0x8CA8
 #define GL_DRAW_FRAMEBUFFER 0x8CA9
+#define GL_TEXTURE_MIN_FILTER 0x2801
+#define GL_TEXTURE_MAG_FILTER 0x2800
 
 extern "C" void glDrawArrays(GLenum mode, GLint first, GLsizei count);
 extern "C" void glClear(GLbitfield mask);
 extern "C" void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha);
 extern "C" void glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
+extern "C" void glBindTexture(GLenum target, GLuint texture);
 extern "C" void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void * data);
+extern "C" void glTexParameteri(GLenum target, GLenum pname, GLint param);
 extern "C" GLenum glGetError();
 
 #define GL_FUN(name, type_ret, type, ...) \
@@ -76,7 +80,7 @@ GL_FUN(glUseProgram, void, gl_use_program, GLuint program);
 GL_FUN(glEnableVertexAttribArray, void, gl_enable_vertex_attrib_array, GLuint index);
 GL_FUN(glVertexAttribPointer, void, gl_vertex_attrib_pointer, GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void * pointer);
 GL_FUN(glCreateTextures, void, gl_create_textures, GLenum target, GLsizei n, GLuint *textures);
-GL_FUN(glBindTexture, void, gl_bind_texture, GLenum target, GLuint texture);
+//GL_FUN(glBindTexture, void, gl_bind_texture, GLenum target, GLuint texture);
 GL_FUN(glCreateFramebuffers, void, gl_create_framebuffers, GLsizei n, GLuint *framebuffers);
 GL_FUN(glBindFramebuffer, void, gl_bind_framebuffer, GLenum target, GLuint framebuffer);
 //GL_FUN(glTexImage2D, void, gl_tex_image_2d, GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void * data);
@@ -112,7 +116,7 @@ internal void LoadAllOpenGLFunctions(platform_get_opengl_function *getOpenGLFunc
         GL_FUN(glEnableVertexAttribArray, gl_enable_vertex_attrib_array);
         GL_FUN(glVertexAttribPointer, gl_vertex_attrib_pointer);
         GL_FUN(glCreateTextures, gl_create_textures);
-        GL_FUN(glBindTexture, gl_bind_texture);
+        //GL_FUN(glBindTexture, gl_bind_texture);
         GL_FUN(glCreateFramebuffers, gl_create_framebuffers);
         GL_FUN(glBindFramebuffer, gl_bind_framebuffer);
         //GL_FUN(glTexImage2D, gl_tex_image_2d);
