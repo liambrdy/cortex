@@ -103,6 +103,7 @@ GL_FUN(glGetUniformLocation, GLint, gl_get_uniform_location, GLuint program, con
 GL_FUN(glUniformMatrix4fv, void, gl_uniform_matrix_4fv, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
 GL_FUN(glBindBufferBase, void, gl_bind_buffer_base, GLenum target, GLuint index, GLuint buffer);
 GL_FUN(glUniform1f, void, gl_uniform_1f, GLint location, GLfloat v0);
+GL_FUN(glUniform2f, void, gl_uniform_2f, GLint location, GLfloat v0, GLfloat v1);
 GL_FUN(glUniform1i, void, gl_uniform_1i, GLint location, GLint v0);
 GL_FUN(glDebugMessageCallback, void, gl_debug_message_callback, DEBUGPROC callback, const void *userdata);
 GL_FUN(glActiveTexture, void, gl_active_texture, GLenum texture);
@@ -160,6 +161,7 @@ internal void LoadAllOpenGLFunctions(platform_get_opengl_function *getOpenGLFunc
         GL_FUN(glUniformMatrix4fv, gl_uniform_matrix_4fv);
         GL_FUN(glBindBufferBase, gl_bind_buffer_base);
         GL_FUN(glUniform1f, gl_uniform_1f);
+        GL_FUN(glUniform2f, gl_uniform_2f);
         GL_FUN(glUniform1i, gl_uniform_1i);
         GL_FUN(glDebugMessageCallback, gl_debug_message_callback);
         GL_FUN(glActiveTexture, gl_active_texture);
@@ -256,18 +258,19 @@ internal void CreateOpenGLShaders(uint32 *shaders)
         )"""",
         R""""(
             // lights
+            layout (location = 0) in vec2 position;
+
             out vec2 fragPos;
             out vec2 fragUv;
 
+            uniform mat4 projection;
+            
             void main()
             {
-                vec4 vertices[] = vec4[](vec4(0, 0, 0, 1),
-                                        vec4(0, 1, 0, 1),
-                                        vec4(1, 0, 0, 1),
-                                        vec4(1, 1, 0, 1));
-                fragUv = vertices[gl_VertexID].xy;
-                gl_Position = vec4(vertices[gl_VertexID].xy * 2 - 1, 0.0, 1.0);
-                fragPos = gl_Position.xy;
+                vec2 uvs[4] = vec2[4](vec2(0.0, 0.0), vec2(0.0, 1.0), vec2(1.0, 0.0), vec2(1.0, 1.0));
+                gl_Position = projection * vec4(position, 0.0, 1.0);
+                fragUv = uvs[gl_VertexID];
+                fragPos = position;
             }
         )"""",
         R""""(
@@ -296,7 +299,7 @@ internal void CreateOpenGLShaders(uint32 *shaders)
             void main()
             {
                 outColor = fragColor;
-                outNormal = vec4(0, 1, 0, 1);
+                outNormal = vec4(0.25, 0.25, 1, 1);
             }
         )"""",
         R""""(
@@ -309,11 +312,10 @@ internal void CreateOpenGLShaders(uint32 *shaders)
             struct light
             {
                 vec2 position;
-                float intensity;
-                float radius;
-                vec4 tint;
                 float minAngle;
                 float maxAngle;
+                vec4 tint;
+                float intensity;
             };
 
             layout (std140, binding = 0) buffer light_buffer
@@ -321,25 +323,35 @@ internal void CreateOpenGLShaders(uint32 *shaders)
                 light lights[];
             };
 
-            uniform float lightCount;
             uniform sampler2D normalTexture;
-            uniform mat4 projection;
+            uniform vec2 resolution;
+
+            #define PI 3.1415926538
 
             void main()
             {
-                vec4 finalColor = vec4(0.0);
-                for (int i = 0; i < int(lightCount); i++)
-                {
-                    light l = lights[i];
-                    vec2 worldCoord = (vec4(l.position, 0.0, 1.0) * projection).xy;
-                    float dist = distance(worldCoord, fragPos);
-                    float radialFallof = pow(l.radius - dist, 2.0);
-                    float finalIntensity = l.intensity * radialFallof;
-                    vec4 color = l.tint * finalIntensity;
-                    finalColor += color;
-                }
+                light l = lights[0];
+                vec2 quadSpace = (2.0 * fragUv) - vec2(1.0);
+                float dist = distance(quadSpace, vec2(0));
+                float radialFalloff = pow(clamp(1.0 - dist, 0.0, 1.0), 2.0);
 
-                outColor = finalColor;
+                float angle = atan(quadSpace.y, quadSpace.x);
+                if (angle < 0) angle += 2*PI;
+                float middleAngle = (l.maxAngle + l.minAngle) / 2;
+                float angularFalloff = 0.0;
+                if (angle <= middleAngle) angularFalloff = smoothstep(l.minAngle, l.maxAngle, angle);
+                else if (angle > middleAngle) angularFalloff = smoothstep(l.maxAngle, l.minAngle, angle);
+
+                vec2 uv = gl_FragCoord.xy / resolution;
+                vec4 normal = texture(normalTexture, uv);
+                vec2 diff = fragPos - l.position;
+                vec2 normDiff = normalize(diff);
+                float normalFalloff = clamp(dot(normDiff, normal.xy), 0.0, 1.0);
+
+                float finalIntensity = l.intensity * radialFalloff * angularFalloff * normalFalloff;
+                vec4 color = l.tint * finalIntensity;
+
+                outColor = color;
             }
         )"""",
         R""""(

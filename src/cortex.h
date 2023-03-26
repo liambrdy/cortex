@@ -53,12 +53,12 @@ struct render_target
 struct light
 {
     v2 position;
-    real32 intensity;
-    real32 radius;
-    v4 tint;
     real32 minAngle;
     real32 maxAngle;
+    v4 tint;
+    real32 intensity;
     v2 padding00;
+    real32 padding01;
 };
 
 #define MAX_LIGHTS 16
@@ -83,7 +83,8 @@ struct game_state
     uint32 lightCount;
 
     uint32 lightShaderBuffer;
-    uint32 lightRectBuffer;
+    uint32 lightVao;
+    opengl_buffer lightVertexBuffer;
 
     real32 metersToPixels;
 };

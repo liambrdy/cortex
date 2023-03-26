@@ -149,20 +149,38 @@ extern "C" GAME_UPDATE(GameUpdate)
         gameState->lights = PushArray(&gameState->permanentArena, MAX_LIGHTS, light);
         gameState->lights[gameState->lightCount++] = {
             V2(-2.0f, -0.5f),
-            1.0f,
-            1.0f,
+            0, // min
+            0, // max
             V4(0.9f, 0.2f, 0.2f, 1.0f),
-            0.0f,
-            0.0f,
-            V2(0.0f, 0.0f)
+            1.0f,
+            V2(0.0f, 0.0f),
+            0.0f
         };
 
         glCreateBuffers(1, &gameState->lightShaderBuffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, gameState->lightShaderBuffer);
         glBufferData(GL_SHADER_STORAGE_BUFFER, gameState->lightCount * sizeof(light), gameState->lights, GL_STATIC_DRAW);
 
+        glCreateVertexArrays(1, &gameState->lightVao);
+        glBindVertexArray(gameState->lightVao);
+
+        gameState->lightVertexBuffer = CreateOpenGLBuffer(gameState, GL_ARRAY_BUFFER, 16 * 4 * 2);
+        glBindBuffer(GL_ARRAY_BUFFER, gameState->lightVertexBuffer.handle);
+
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(real32), 0);
+
+        real32 radius = 8.0f;
+        light *l = gameState->lights;
+        PushV2ToBuffer(&gameState->lightVertexBuffer, l->position + V2(-radius, -radius));
+        PushV2ToBuffer(&gameState->lightVertexBuffer, l->position + V2(-radius, radius));
+        PushV2ToBuffer(&gameState->lightVertexBuffer, l->position + V2(radius, -radius));
+        PushV2ToBuffer(&gameState->lightVertexBuffer, l->position + V2(radius, radius));
+
+        glBufferSubData(GL_ARRAY_BUFFER, 0, gameState->lightVertexBuffer.bufferSize * sizeof(real32), gameState->lightVertexBuffer.buffer);
+
         real32 aspect = (real32) input->windowWidth / (real32) input->windowHeight;
-        real32 metersToPixels = 5.0f;
+        real32 metersToPixels = 10.0f;
         gameState->perspective = M4Orthographic(-aspect * metersToPixels, aspect * metersToPixels, -metersToPixels, metersToPixels, -100.0f, 100.0f);
         gameState->metersToPixels = metersToPixels;
 
@@ -246,12 +264,15 @@ extern "C" GAME_UPDATE(GameUpdate)
         glBindFramebuffer(GL_FRAMEBUFFER, gameState->lightTarget.handle);
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+        glBindVertexArray(gameState->lightVao);
         glUseProgram(program);
-        glUniform1f(glGetUniformLocation(program, "lightCount"), (real32) gameState->lightCount);
         glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, &gameState->perspective.e[0][0]);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, gameState->lightShaderBuffer);
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, gameState->gBuffer.targets[1]);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        glUniform1i(glGetUniformLocation(program, "normalTexture"), 0);
+        glUniform2f(glGetUniformLocation(program, "resolution"), (real32) input->windowWidth, (real32) input->windowHeight);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4 * gameState->lightCount);
     }
 
     // glBindFramebuffer(GL_READ_FRAMEBUFFER, gameState->gBuffer.handle);
