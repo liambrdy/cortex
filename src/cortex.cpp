@@ -135,11 +135,34 @@ extern "C" GAME_UPDATE(GameUpdate)
         AddRenderTexture(&gameState->gBuffer, 0, input->windowWidth, input->windowHeight);
         AddRenderTexture(&gameState->gBuffer, 1, input->windowWidth, input->windowHeight);
 
-        GLenum drawBuffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT0 + 1};
-        glDrawBuffers(ArrayCount(drawBuffers), drawBuffers);
+        GLenum gDrawBuffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT0 + 1};
+        glDrawBuffers(ArrayCount(gDrawBuffers), gDrawBuffers);
+
+        glCreateFramebuffers(1, &gameState->lightTarget.handle);
+        glBindFramebuffer(GL_FRAMEBUFFER, gameState->lightTarget.handle);
+
+        AddRenderTexture(&gameState->lightTarget, 0, input->windowWidth, input->windowHeight);
+
+        GLenum lDrawBuffers[] = {GL_COLOR_ATTACHMENT0};
+        glDrawBuffers(ArrayCount(lDrawBuffers), lDrawBuffers);
+
+        gameState->lights = PushArray(&gameState->permanentArena, MAX_LIGHTS, light);
+        gameState->lights[gameState->lightCount++] = {
+            V2(-2.0f, -0.5f),
+            1.0f,
+            1.0f,
+            V4(0.9f, 0.2f, 0.2f, 1.0f),
+            0.0f,
+            0.0f,
+            V2(0.0f, 0.0f)
+        };
+
+        glCreateBuffers(1, &gameState->lightShaderBuffer);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, gameState->lightShaderBuffer);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, gameState->lightCount * sizeof(light), gameState->lights, GL_STATIC_DRAW);
 
         real32 aspect = (real32) input->windowWidth / (real32) input->windowHeight;
-        real32 metersToPixels = 10.0f;
+        real32 metersToPixels = 5.0f;
         gameState->perspective = M4Orthographic(-aspect * metersToPixels, aspect * metersToPixels, -metersToPixels, metersToPixels, -100.0f, 100.0f);
         gameState->metersToPixels = metersToPixels;
 
@@ -148,20 +171,22 @@ extern "C" GAME_UPDATE(GameUpdate)
 
     gameState->renderStackCount = 0;
     
-    PushClear(gameState, V4(0.0f, 0.1f, 0.3f, 1.0f));
+    //PushClear(gameState, V4(0.0f, 0.1f, 0.3f, 1.0f));
     PushViewport(gameState, V2(0.0f, 0.0f), V2((real32) input->windowWidth, (real32) input->windowHeight));
 
-    real32 metersToPixels = gameState->metersToPixels;
-    real32 aspect = 1280.0f / 720.0f;
-    for (real32 x = -metersToPixels*aspect; x < aspect*metersToPixels; x++)
-    {
-        for (real32 y = -metersToPixels; y < metersToPixels; y++)
-        {
-            real32 u = (x+metersToPixels)/(2*metersToPixels);
-            real32 v = (y+metersToPixels)/(2*metersToPixels);
-            PushRect(gameState, V4(x, y, 1, 1), V4(u, v, 0.0f, 1.0f));
-        }
-    }
+    // real32 metersToPixels = gameState->metersToPixels;
+    // real32 aspect = 1280.0f / 720.0f;
+    // for (real32 x = -metersToPixels*aspect; x < aspect*metersToPixels; x++)
+    // {
+    //     for (real32 y = -metersToPixels; y < metersToPixels; y++)
+    //     {
+    //         real32 u = (x+metersToPixels)/(2*metersToPixels);
+    //         real32 v = (y+metersToPixels)/(2*metersToPixels);
+    //         PushRect(gameState, V4(x, y, 1, 1), V4(u, v, 0.0f, 1.0f));
+    //     }
+    // }
+
+    PushRect(gameState, V4(0.0f, 0.0f, 1.0f, 1.0f), V4(1.0f, 0.2f, 0.2f, 1.0f));
 
     for (uint32 i = 0; i < gameState->renderStackCount; i++)
     {
@@ -204,13 +229,29 @@ extern "C" GAME_UPDATE(GameUpdate)
     if (gameState->rectBuffer.bufferSize > 0)
     {
         glBindFramebuffer(GL_FRAMEBUFFER, gameState->gBuffer.handle);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);   
         glBindVertexArray(gameState->rectVao);
         glBindBuffer(GL_ARRAY_BUFFER, gameState->rectBuffer.handle);
         glBufferSubData(GL_ARRAY_BUFFER, 0, gameState->rectBuffer.bufferSize * sizeof(real32), gameState->rectBuffer.buffer);
         glUseProgram(gameState->shaders[ShaderType_Rect]);
-        glUniformMatrix4fv(glGetUniformLocation(gameState->shaders[ShaderType_Rect], "perspective"), 1, GL_FALSE, &gameState->perspective.e[0][0]);
-        glDrawArrays(GL_TRIANGLES, 0, gameState->rectBuffer.bufferSize / 2);
+        glUniformMatrix4fv(glGetUniformLocation(gameState->shaders[ShaderType_Rect], "projection"), 1, GL_FALSE, &gameState->perspective.e[0][0]);
+        glDrawArrays(GL_TRIANGLES, 0, gameState->rectBuffer.bufferSize / 6);
         gameState->rectBuffer.bufferSize = 0;
+    }
+
+    if (gameState->lightCount > 0)
+    {
+        uint32 program = gameState->shaders[ShaderType_Lights];
+        glBindFramebuffer(GL_FRAMEBUFFER, gameState->lightTarget.handle);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glUseProgram(program);
+        glUniform1f(glGetUniformLocation(program, "lightCount"), (real32) gameState->lightCount);
+        glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, &gameState->perspective.e[0][0]);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, gameState->lightShaderBuffer);
+        glBindTexture(GL_TEXTURE_2D, gameState->gBuffer.targets[1]);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
 
     // glBindFramebuffer(GL_READ_FRAMEBUFFER, gameState->gBuffer.handle);
@@ -218,10 +259,22 @@ extern "C" GAME_UPDATE(GameUpdate)
     // glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
 
+    uint32 program = gameState->shaders[ShaderType_Final];
+    glUseProgram(program);
+
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, gameState->gBuffer.targets[0]);
+    glUniform1i(glGetUniformLocation(program, "colorTexture"), 0);
 
-    glUseProgram(gameState->shaders[ShaderType_Final]);
+    glActiveTexture(GL_TEXTURE0 + 1);
+    glBindTexture(GL_TEXTURE_2D, gameState->lightTarget.targets[0]);
+    glUniform1i(glGetUniformLocation(program, "lightTexture"), 1);
+
+    glUniform1f(glGetUniformLocation(program, "volumetricIntensity"), 1.0f);
+
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     GLenum error = glGetError();

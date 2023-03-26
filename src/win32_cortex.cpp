@@ -7,6 +7,8 @@
 #define WGL_CONTEXT_MINOR_VERSION_ARB           0x2092
 #define WGL_CONTEXT_PROFILE_MASK_ARB            0x9126
 #define WGL_CONTEXT_CORE_PROFILE_BIT_ARB        0x00000001
+#define WGL_CONTEXT_FLAGS_ARB                   0x2094
+#define WGL_CONTEXT_DEBUG_BIT_ARB               0x0001
 
 #define WGL_DRAW_TO_WINDOW_ARB                    0x2001
 #define WGL_ACCELERATION_ARB                      0x2003
@@ -20,11 +22,16 @@
 #define WGL_FULL_ACCELERATION_ARB                 0x2027
 #define WGL_TYPE_RGBA_ARB                         0x202B
 
-typedef HGLRC wgl_create_context_attribs_arb(HDC hDC, HGLRC hShareContext, const int *attribList);
-global wgl_create_context_attribs_arb *wglCreateContextAttribsARB;
+#define WGL_FUN(name, type_ret, type, ...)\
+typedef type_ret type(__VA_ARGS__); \
+global type *name;
 
-typedef BOOL wgl_choose_pixel_format_arb(HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
-global wgl_choose_pixel_format_arb *wglChoosePixelFormatARB;
+WGL_FUN(wglCreateContextAttribsARB, HGLRC, wgl_create_context_attribs_arb, HDC hDC, HGLRC hShareContext, const int *attribList);
+WGL_FUN(wglChoosePixelFormatARB, BOOL, wgl_choose_pixel_format_arb, HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
+WGL_FUN(wglGetExtensionsStringEXT, const char *, wgl_get_extensions_string_ext);
+WGL_FUN(wglSwapIntervalEXT, BOOL, wgl_swap_interval_ext, int interval);
+
+#undef WGL_FUN
 
 global bool globalRunning;
 
@@ -96,6 +103,11 @@ void ProcessPendingMessages()
     }
 }
 
+bool WGLFunctionSupported(const char *extensionName)
+{
+    return strstr(wglGetExtensionsStringEXT(), extensionName) != NULL;
+}
+
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hInstancePrev, PSTR cmdline, int nCmdShow)
 {
     WNDCLASS wc = {};
@@ -126,8 +138,16 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hInstancePrev, PSTR cmdline,
         HGLRC wglContext = wglCreateContext(dc);
         wglMakeCurrent(dc, wglContext);
 
-        wglCreateContextAttribsARB = (wgl_create_context_attribs_arb *)wglGetProcAddress("wglCreateContextAttribsARB");
-        wglChoosePixelFormatARB = (wgl_choose_pixel_format_arb *)wglGetProcAddress("wglChoosePixelFormatARB");
+#define WGL_FUN(name, type) \
+        name = (type *)wglGetProcAddress(#name);
+        WGL_FUN(wglCreateContextAttribsARB, wgl_create_context_attribs_arb);
+        WGL_FUN(wglChoosePixelFormatARB, wgl_choose_pixel_format_arb);
+        WGL_FUN(wglGetExtensionsStringEXT, wgl_get_extensions_string_ext);
+        if (WGLFunctionSupported("WGL_EXT_swap_control"))
+        {
+            WGL_FUN(wglSwapIntervalEXT, wgl_swap_interval_ext);
+        }
+
         if (wglChoosePixelFormatARB)
         {
             int pixel_format_attribs[] = {
@@ -156,11 +176,17 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hInstancePrev, PSTR cmdline,
                 WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
                 WGL_CONTEXT_MINOR_VERSION_ARB, 3,
                 WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+                WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_DEBUG_BIT_ARB,
                 0,
             };
 
             HGLRC newContext = wglCreateContextAttribsARB(dc, 0, createAttribs);
             wglMakeCurrent(dc, newContext);
+        }
+
+        if (wglSwapIntervalEXT)
+        {
+            wglSwapIntervalEXT(1);
         }
 
         game_memory gameMemory = {};

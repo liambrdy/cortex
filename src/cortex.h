@@ -50,6 +50,18 @@ struct render_target
     uint32 targets[4];
 };
 
+struct light
+{
+    v2 position;
+    real32 intensity;
+    real32 radius;
+    v4 tint;
+    real32 minAngle;
+    real32 maxAngle;
+    v2 padding00;
+};
+
+#define MAX_LIGHTS 16
 struct game_state
 {
     memory_arena permanentArena;
@@ -65,6 +77,13 @@ struct game_state
     uint32 shaders[ShaderTypeCount];
 
     render_target gBuffer;
+    render_target lightTarget;
+
+    light *lights;
+    uint32 lightCount;
+
+    uint32 lightShaderBuffer;
+    uint32 lightRectBuffer;
 
     real32 metersToPixels;
 };
